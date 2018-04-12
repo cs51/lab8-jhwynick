@@ -122,7 +122,8 @@ decide how to implement this.
 ......................................................................*)
                                                    
   let add_listener (evt : 'a event) (listener : 'a -> unit) : id =
-    failwith "WEvent.add_listener not implemented"
+    let n_id = new_id () in 
+      evt := {id = n_id; action = listener} :: !evt; n_id
 
 (*......................................................................
 Exercise 2: Write remove_listener, which, given an id and an event,
@@ -130,16 +131,18 @@ unregisters the listener with that id from the event if there is
 one. If there is no listener with that id, do nothing.
 ......................................................................*)
             
-  let remove_listener (evt : 'a event) (i : id) : unit =
-    failwith "WEvent.remove_listener not implemented"
+  let rec remove_listener (evt : 'a event) (i : id) : unit =
+    evt := List.filter (fun mywaiter -> mywaiter.id <> i) !evt
 
 (*......................................................................
 Exercise 3: Write fire_event, which will execute all event handlers
 listening for the event.
 ......................................................................*)
             
-  let fire_event (evt : 'a event) (arg : 'a) : unit =
-    failwith "WEvent.fire_event not implemented"
+  let rec fire_event (evt : 'a event) (arg : 'a) : unit =
+    match !evt with
+    | [] -> ()
+    | mywaiter :: tail -> mywaiter.action arg; fire_event (ref tail) arg
 
 end
   
@@ -156,7 +159,7 @@ Exercise 4: Given your implementation of Event, create a new event
 called "newswire" that should pass strings to the event handlers.
 ......................................................................*)
   
-let newswire = fun _ -> failwith "newswire not implemented" ;;
+let newswire = WEvent.new_event ();;
 
 (* News organizations might want to register event listeners to the
 newswire so that they might report on stories. Below are functions
@@ -173,9 +176,10 @@ let buzzFake (s : string) : unit =
 Exercise 5: Register these two news organizations as listeners to the
 newswire event.
 ......................................................................*)
-  
-(* .. *)
 
+WEvent.add_listener newswire fakeNewsNetwork;;
+
+WEvent.add_listener newswire buzzFake;;
 (* Here are some headlines to play with. *)
 
 let h1 = "the national animal of Eritrea is officially the camel!" ;;
